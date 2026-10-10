@@ -1,13 +1,17 @@
 # Publication de l'installateur Windows (NSIS) à chaque tag `v*`.
 #
-# Prérequis pour servir le canal `electron-updater` :
-#   1. Définir un provider de publication dans electron-builder.yml
-#      (ex. `provider: gitHub` avec `owner`/`repo`, ou `provider: generic`
-#      avec une URL https). Le workflow ci-dessous téléverse alors aussi
-#      `latest.yml`/`latest-mac.yml` qui alimente l'auto-update.
-#   2. Signature de code : renseigner les secrets CSC_LINK/CSC_KEY_PASSWORD
-#      (certificat signé) ou configurer Azure Trusted Signing.
-#      Sans certificat, l'installateur est produit non signé.
+# Le provider de publication est configuré dans electron-builder.yml
+# (provider: github → raj-lab-alt/design-felicite-ai). Ce workflow construit
+# l'installateur + `latest.yml` (canal electron-updater) puis téléverse les
+# artefacts sur la Release GitHub. L'app installée les récupère via
+# « Vérifier les mises à jour ».
+#
+# IMPORTANT : bumper `version` dans package.json avant de pousser le tag
+# (ex. `npm version patch`), sinon l'updater ignore la release.
+#
+# Signature de code : renseigner les secrets CSC_LINK/CSC_KEY_PASSWORD
+# (certificat signé) ou configurer Azure Trusted Signing.
+# Sans certificat, l'installateur est produit non signé.
 
 name: Release Windows
 
@@ -33,10 +37,9 @@ jobs:
       - name: Installation des dépendances
         run: npm ci
 
-      - name: Build + empaquetage NSIS
-        run: npm run dist
+      - name: Build + empaquetage NSIS (sans publication auto)
+        run: npm run dist:ci
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
@@ -44,8 +47,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release/Design Félicité AI-*.exe
-            release/Design Félicité AI-*.blockmap
+            release/design-felicite-ai-*.exe
+            release/design-felicite-ai-*.blockmap
             release/latest.yml
           generate_release_notes: true
+          draft: false
+          prerelease: false
           fail_on_unmatched_files: false

@@ -24,7 +24,7 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  artifactName: ${productName}-${version}-setup.${ext}
+  artifactName: ${name}-${version}-setup.${ext}
   signtoolOptions:
     signingHashAlgorithms:
       - sha256
@@ -43,24 +43,16 @@ nsis:
     - en_US
   language: 1036
 
-# Canal de mise à jour (electron-updater) :
-#  1. Ajouter ici une section `publish` (ex. provider gitHub avec owner/repo, ou
-#     provider generic avec une URL https) pour que electron-builder génère
-#     `Resources/app-update.yml` et que l'application puisse se mettre à jour.
-#  2. Publier chaque release avec `npm run dist && npm run dist:publish`.
-#  Exemple :
-#    publish:
-#      provider: generic
-#      url: https://exemple.com/updates/
-#  Sans section `publish`, le canal est désactivé sans effet de bord.
-# Canal de mise à jour (electron-updater) :
-#  1. Ajouter ici une section `publish` (ex. provider gitHub avec owner/repo, ou
-#     provider generic avec une URL https) pour que electron-builder génère
-#     `Resources/app-update.yml` et que l'application puisse se mettre à jour.
-#  2. Publier chaque release avec `npm run dist && npm run dist:publish`.
-#  Exemple :
-#    publish:
-#      provider: generic
-#      url: https://exemple.com/updates/
-#  Sans section `publish`, le canal est désactivé sans effet de bord.
-publish: null
+# Canal de mise à jour (electron-updater) — GitHub Releases.
+#  - electron-builder embarque `resources/app-update.yml` (feed de l'app) et
+#    génère `latest.yml` (+ blockmap) à chaque build.
+#  - Publication : tag `vX.Y.Z` → workflow `release.yml` téléverse les artefacts
+#    sur la Release GitHub ; l'app installée les récupère via « Vérifier les mises à jour ».
+#  - IMPORTANT : bumper `version` dans package.json avant chaque publication
+#    (l'updater n'installe qu'une version strictement supérieure).
+#  - Le dépôt GitHub doit être public (sinon l'app exigerait un jeton embarqué, interdit).
+publish:
+  provider: github
+  owner: raj-lab-alt
+  repo: design-felicite-ai
+  releaseType: release

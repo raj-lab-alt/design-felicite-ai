@@ -54,5 +54,14 @@ propositions de redesign, génération d'images, expériences A/B, exports PDF/J
 - e2e : `tests/e2e/smoke.spec.ts` (lance le build avec userData temporaire via
   `DESIGN_FELICITE_HOME`). Toujours relancer typecheck + lint + test après modification du code.
 
+## Publication / mises à jour (GitHub Releases)
+- Feed `electron-updater` = `provider: github` (`raj-lab-alt/design-felicite-ai`) dans
+  `electron-builder.yml` → embarque `app-update.yml` et génère `latest.yml`.
+- Nouvelle version : `npm version patch` (commit + tag `vX.Y.Z`) puis `git push --follow-tags` ;
+  le workflow `release.yml` (`npm run dist:ci` + upload) publie sur la Release GitHub.
+- L'updater n'installe qu'une version strictement supérieure → **toujours** bumper `version`.
+- Itération locale sans réinstallation : `npm run dev` (le canal est inactif non empaqueté).
+- Dépôt GitHub **public** requis (pas de jeton embarqué).
+
 ## Docs
 Voir `README.md` (usage, développeur) et `SECURITY.md` (menaces, secrets, canal de mise à jour).

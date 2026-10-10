@@ -34,8 +34,8 @@ Le protocole interdit au modèle de promettre des résultats de vente ou de reco
 
 ## 6. Canal de mise à jour
 
-- Désactivé par défaut (aucun dépôt configuré) ; activé uniquement si un `publish` est défini à la compilation ou si `DESIGN_FELICITE_UPDATE_URL` est renseignée.
-- Les artefacts de mise à jour sont vérifiés par `electron-updater` ; la vérification de signature logicielle (`NsisUpdater`) ne s'active qu'une fois l'application elle-même signée.
+- Adossé à GitHub Releases (`provider: github` dans `electron-builder.yml`, dépôt public `raj-lab-alt/design-felicite-ai`) ; `DESIGN_FELICITE_UPDATE_URL` peut forcer un dépôt *generic* (tests). Inactif en développement (application non empaquetée).
+- Les artefacts de mise à jour sont vérifiés par `electron-updater` (empreinte SHA-512 de `latest.yml`) ; la vérification de signature logicielle (`NsisUpdater`) ne s'active qu'une fois l'application elle-même signée.
 - Le téléchargement est contrôlé par l'utilisateur (jamais automatique sans confirmation d'installation).
 
 ## 7. Vulnérabilités connues / limitations

@@ -37,7 +37,8 @@ npm run dev        # lance l'application en mode développement
 | `npm run make-icon` | Génère `build/icon.png` et `build/icon.ico` sans dépendance |
 | `npm run dist` | Build + installateur NSIS dans `release/` |
 | `npm run dist:dir` | Build + exécutable non installé dans `release/win-unpacked` |
-| `npm run dist:publish` | Build + installateur puis publication (nécessite un provider `publish`) |
+| `npm run dist:ci` | Build + installateur sans publication (utilisé par la CI) |
+| `npm run dist:publish` | Build + installateur puis publication vers GitHub Releases |
 
 ## Structure
 
@@ -83,13 +84,21 @@ backups/ sauvegardes de la base
 
 ## Mises à jour automatiques
 
-La vérification des mises à jour est intégrée (Paramètres → Mises à jour) via `electron-updater`, mais **désactivée tant qu'aucun dépôt n'est configuré** :
+La vérification des mises à jour est intégrée (Paramètres → Mises à jour) via `electron-updater`, adossée à **GitHub Releases** (`raj-lab-alt/design-felicite-ai`, configuré dans `electron-builder.yml`).
 
-- En production, electron-builder génère `Resources/app-update.yml` dès qu'une section `publish` est présente dans `electron-builder.yml` (ex. GitHub Releases ou une URL générique).
-- En test, la variable `DESIGN_FELICITE_UPDATE_URL` active un dépôt *generic*.
-- Le canal reste inactif en développement (application non empaquetée) et sans le moindre effet de bord.
+- En production, electron-builder embarque `resources/app-update.yml` (feed de l'app) et génère `latest.yml` + `latest.yml.blockmap`.
+- En test, la variable `DESIGN_FELICITE_UPDATE_URL` force un dépôt *generic* (utilisé par certains scénarios).
+- En développement (application non empaquetée) le canal reste inactif : utiliser `npm run dev` pour itérer, sans réinstallation.
 
-Un workflow GitHub Actions (`release.yml`) prépare la publication à chaque tag `v*`.
+### Publier une nouvelle version (sans réinstaller manuellement)
+
+1. Bumper la version : `npm version patch` (crée le commit + le tag `vX.Y.Z`).
+2. Pousser avec les tags : `git push --follow-tags`.
+3. Le workflow `release.yml` construit l'installateur + `latest.yml` et les publie sur la Release GitHub.
+4. Dans l'app installée : **Paramètres → Mises à jour → Vérifier les mises à jour**, puis *Installer*.
+
+> L'updater n'installe qu'une version **strictement supérieure** : sans bump de version, aucune mise à jour n'est proposée.
+> Le dépôt GitHub doit être **public** pour que l'app télécharge les releases sans jeton embarqué.
 
 ## Signature de code (Windows)
 

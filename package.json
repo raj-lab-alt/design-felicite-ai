@@ -6,6 +6,10 @@
   "author": "Design Félicité AI",
   "license": "UNLICENSED",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raj-lab-alt/design-felicite-ai.git"
+  },
   "main": "out/main/index.js",
   "engines": {
     "node": ">=22.12.0"
@@ -25,6 +29,7 @@
     "make-icon": "node scripts/make-icon.mjs",
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
+    "dist:ci": "electron-vite build && electron-builder --win --publish never",
     "dist:publish": "electron-vite build && electron-builder --win --publish always",
     "postinstall": "node scripts/patch-electronrc.mjs"
   },
