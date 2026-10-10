@@ -5,11 +5,13 @@ import { cn } from '../../lib/cn'
 export function Tabs({
   value,
   onValueChange,
-  items
+  items,
+  children
 }: {
   value: string
   onValueChange?: (value: string) => void
   items: Array<{ value: string; label: string; count?: number }>
+  children?: React.ReactNode
 }): React.JSX.Element {
   return (
     <RadixTabs.Root value={value} onValueChange={onValueChange}>
@@ -32,6 +34,7 @@ export function Tabs({
           </RadixTabs.Trigger>
         ))}
       </RadixTabs.List>
+      {children}
     </RadixTabs.Root>
   )
 }

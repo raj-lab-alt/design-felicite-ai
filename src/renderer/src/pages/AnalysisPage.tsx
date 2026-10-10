@@ -153,19 +153,20 @@ export function AnalysisPage(): React.JSX.Element {
               { value: 'report', label: 'Rapport complet', count: detail.report.priorityRecommendations.length },
               { value: 'redesign', label: 'Redesign', count: detail.selectedRecommendationIds.length }
             ]}
-          />
-          <TabsContent value="report">
-            <ReportView report={detail.report} selectedIds={selectedIds} onToggleRecommendation={(id) => void toggleRecommendation(id)} />
-          </TabsContent>
-          <TabsContent value="redesign">
-            <RedesignStudio
-              projectId={detail.projectId}
-              analysisId={detail.id}
-              sourceImageId={detail.image?.id ?? ''}
-              recommendedIds={selectedIds}
-              onVariantCreated={() => void load()}
-            />
-          </TabsContent>
+          >
+            <TabsContent value="report">
+              <ReportView report={detail.report} selectedIds={selectedIds} onToggleRecommendation={(id) => void toggleRecommendation(id)} />
+            </TabsContent>
+            <TabsContent value="redesign">
+              <RedesignStudio
+                projectId={detail.projectId}
+                analysisId={detail.id}
+                sourceImageId={detail.image?.id ?? ''}
+                recommendedIds={selectedIds}
+                onVariantCreated={() => void load()}
+              />
+            </TabsContent>
+          </Tabs>
         </>
       ) : null}
 

@@ -232,9 +232,8 @@ export function ProjectPage(): React.JSX.Element {
           { value: 'experiments', label: 'Expériences' },
           { value: 'exports', label: 'Exports', count: exports?.length }
         ]}
-      />
-
-      <TabsContent value="images">
+      >
+        <TabsContent value="images">
         <div className="mb-4 flex items-center justify-between">
           <p className="text-xs text-ink-dim">Importez vos designs, puis lancez une analyse.</p>
           <Button size="sm" icon={<Upload className="h-4 w-4" />} onClick={() => void importImages()}>
@@ -489,6 +488,7 @@ export function ProjectPage(): React.JSX.Element {
           </ul>
         )}
       </TabsContent>
+      </Tabs>
 
       <AnalysisWizard
         open={wizardImage !== null}

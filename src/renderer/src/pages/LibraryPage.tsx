@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FolderPlus, FolderSearch, Search } from 'lucide-react'
 import { Badge, Button, Card, EmptyState, Input, Spinner, Field } from '../components/ui/primitives'
 import { Dialog } from '../components/ui'
@@ -10,6 +10,7 @@ import type { ProjectDTO } from '@shared/ipc'
 
 export function LibraryPage(): React.JSX.Element {
   const toast = useAppStore((s) => s.toast)
+  const navigate = useNavigate()
   const [projects, setProjects] = useState<ProjectDTO[] | null>(null)
   const [query, setQuery] = useState('')
   const [createOpen, setCreateOpen] = useState(false)
@@ -45,7 +46,7 @@ export function LibraryPage(): React.JSX.Element {
       setCreateOpen(false)
       setNewName('')
       toast('success', 'Projet créé.')
-      window.location.hash = `#/projects/${project.id}`
+      navigate(`/projects/${project.id}`)
     } catch (error) {
       toast('error', error instanceof Error ? error.message : 'Création impossible.')
     } finally {
