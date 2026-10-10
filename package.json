@@ -1,7 +1,7 @@
 {
   "name": "design-felicite-ai",
   "productName": "Design Félicité AI",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Application professionnelle d'analyse et d'optimisation des designs commerciaux (analyse visuelle multimodale Gemini, scoring heuristique, propositions de redesign).",
   "author": "Design Félicité AI",
   "license": "UNLICENSED",
