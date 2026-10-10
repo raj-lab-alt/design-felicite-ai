@@ -1,0 +1,12 @@
+* text=auto
+*.md text
+*.ts text
+*.tsx text
+*.json text
+*.mjs text
+*.yml text
+*.css text
+*.html text
+*.ico binary
+*.png binary
+*.db binary
