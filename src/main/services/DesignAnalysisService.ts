@@ -1,4 +1,5 @@
 import {
+  ANALYSIS_MAX_OUTPUT_TOKENS,
   CATEGORY_WEIGHT_PROFILE,
   MAX_REPAIR_ATTEMPTS,
   PROTOCOL_VERSION,
@@ -242,7 +243,7 @@ export class DesignAnalysisService {
           images: [{ mimeType, base64 }],
           responseJsonSchema: modelReportJsonSchema(),
           temperature: attempt === 0 ? 0.2 : 0.1,
-          maxOutputTokens: 8192,
+          maxOutputTokens: ANALYSIS_MAX_OUTPUT_TOKENS,
           signal
         },
         models

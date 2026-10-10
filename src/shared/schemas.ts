@@ -187,13 +187,94 @@ export const modelReportPayloadSchema = z.object({
 })
 export type ModelReportPayload = z.infer<typeof modelReportPayloadSchema>
 
-/** Schéma JSON transmis à Gemini pour contraindre la sortie (généré depuis le schéma zod). */
+/**
+ * Mots-clés JSON Schema retirés avant l'envoi à Gemini (`responseJsonSchema`).
+ * - `$schema`/`$ref`/`additionalProperties`… : mots-clés non supportés.
+ * - Contraintes de validation : elles font exploser le nombre d'« états » du
+ *   schéma et déclenchent une 400 « schema produces a constraint that has too
+ *   many states for serving » (bornes numériques, longueurs de tableau/chaîne…).
+ *   Ces contraintes restent appliquées côté app par la validation zod.
+ */
+const GEMINI_UNSUPPORTED_SCHEMA_KEYS = new Set([
+  '$schema',
+  '$id',
+  '$ref',
+  '$anchor',
+  '$defs',
+  'definitions',
+  'additionalProperties',
+  'unevaluatedProperties',
+  'propertyNames',
+  'patternProperties',
+  'dependencies',
+  'dependentRequired',
+  'dependentSchemas',
+  'const',
+  'examples',
+  'default',
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+  'minItems',
+  'maxItems',
+  'uniqueItems',
+  'minLength',
+  'maxLength',
+  'pattern',
+  'format',
+  'minProperties',
+  'maxProperties'
+])
+
+/**
+ * Convertit un schéma JSON (draft) vers le sous-ensemble accepté par Gemini :
+ * suppression des mots-clés non supportés et remplacement des `anyOf`/types
+ * contenant `null` par `nullable: true` (le type `null` n'existe pas côté Gemini).
+ */
+function normalizeGeminiJsonSchema(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(normalizeGeminiJsonSchema)
+  if (!node || typeof node !== 'object') return node
+  const source = node as Record<string, unknown>
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(source)) {
+    if (GEMINI_UNSUPPORTED_SCHEMA_KEYS.has(key)) continue
+    out[key] = normalizeGeminiJsonSchema(value)
+  }
+
+  let nullable = false
+  if (Array.isArray(out.type)) {
+    const types = out.type as unknown[]
+    const nonNull = types.filter((type) => type !== 'null')
+    if (nonNull.length !== types.length) nullable = true
+    out.type = nonNull.length === 1 ? nonNull[0] : nonNull
+  }
+
+  if (Array.isArray(out.anyOf)) {
+    const anyOf = out.anyOf as Array<Record<string, unknown>>
+    const branches = anyOf.filter((branch) => !(branch && branch.type === 'null'))
+    if (branches.length !== anyOf.length) nullable = true
+    if (branches.length === 1) {
+      delete out.anyOf
+      Object.assign(out, branches[0])
+    } else {
+      out.anyOf = branches
+    }
+  }
+
+  if (nullable) out.nullable = true
+  return out
+}
+
+/** Schéma JSON transmis à Gemini (`responseJsonSchema`), simplifié pour rester sous la limite de complexité. */
 export function modelReportJsonSchema(): Record<string, unknown> {
-  return z.toJSONSchema(modelReportPayloadSchema, {
+  const draft = z.toJSONSchema(modelReportPayloadSchema, {
     target: 'draft-07',
     io: 'input',
     unrepresentable: 'any'
-  }) as Record<string, unknown>
+  })
+  return normalizeGeminiJsonSchema(draft) as Record<string, unknown>
 }
 
 /* ------------------------------------------------------------------ */

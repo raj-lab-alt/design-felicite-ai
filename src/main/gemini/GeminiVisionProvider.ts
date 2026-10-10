@@ -1,6 +1,7 @@
 import type { Part } from '@google/genai'
 import { AppError } from '@shared/errors'
 import { mapGeminiError } from './errors'
+import { logger } from '../utils/logger'
 import type {
   GeminiClientFactory,
   ProviderVisionResponse,
@@ -56,6 +57,9 @@ export class GeminiVisionProvider implements VisionProvider {
         modelVersion: response.modelVersion ?? null
       }
     } catch (error) {
+      logger.warn('Erreur du service Gemini', {
+        message: error instanceof Error ? error.message : String(error)
+      })
       throw mapGeminiError(error)
     }
   }

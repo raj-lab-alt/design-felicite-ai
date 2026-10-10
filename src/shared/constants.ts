@@ -47,6 +47,13 @@ export const SUGGESTED_ANALYSIS_MODELS: ReadonlyArray<string> = [
   'gemini-3-pro'
 ]
 
+/**
+ * Plafond de jetons de sortie pour l'analyse. Les modèles 2.5/3.x consomment une part
+ * importante de ce budget pour le « thinking » ; un plafond trop bas (ex. 8192) tronque
+ * le JSON de sortie (finishReason = MAX_TOKENS) et fait échouer le parsing.
+ */
+export const ANALYSIS_MAX_OUTPUT_TOKENS = 32768
+
 /** Modèles de génération / édition d'images proposés par défaut (distincts du modèle d'analyse). */
 export const DEFAULT_IMAGE_MODEL = 'gemini-3.1-flash-image'
 export const SUGGESTED_IMAGE_MODELS: ReadonlyArray<string> = [
