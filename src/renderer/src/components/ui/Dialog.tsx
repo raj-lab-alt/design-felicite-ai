@@ -26,12 +26,12 @@ export function Dialog({
         <RadixDialog.Overlay className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" />
         <RadixDialog.Content
           className={cn(
-            'fixed left-1/2 top-1/2 z-50 w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2',
-            'rounded-2xl border border-line bg-panel p-6 shadow-2xl outline-none',
+            'fixed left-1/2 top-1/2 z-50 flex max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2',
+            'flex-col rounded-2xl border border-line bg-panel p-6 shadow-2xl outline-none',
             width
           )}
         >
-          <div className="mb-4 flex items-start justify-between gap-4">
+          <div className="mb-4 flex shrink-0 items-start justify-between gap-4">
             <div className="space-y-1">
               <RadixDialog.Title className="text-base font-semibold text-ink">{title}</RadixDialog.Title>
               {description ? (
@@ -45,8 +45,10 @@ export function Dialog({
               <X className="h-4 w-4" />
             </RadixDialog.Close>
           </div>
-          <div className="space-y-4">{children}</div>
-          {footer ? <div className="mt-6 flex items-center justify-end gap-2">{footer}</div> : null}
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">{children}</div>
+          {footer ? (
+            <div className="mt-6 flex shrink-0 items-center justify-end gap-2">{footer}</div>
+          ) : null}
         </RadixDialog.Content>
       </RadixDialog.Portal>
     </RadixDialog.Root>
