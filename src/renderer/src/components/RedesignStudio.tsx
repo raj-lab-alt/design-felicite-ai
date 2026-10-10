@@ -160,7 +160,7 @@ export function RedesignStudio({
 
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs text-ink-faint">
-            Modèle d’image : {settings?.imageModel ?? '—'} · coût indicatif par essai :{' '}
+            Modèle d’image : {settings?.imageModels?.[0] ?? '—'} · coût indicatif par essai :{' '}
             {settings ? `$ ${((settings.imagePricePerImage ?? 0.04) * 100).toFixed(4)} c` : '—'}
             {' '}· votre clé API reste sur votre machine.
           </p>

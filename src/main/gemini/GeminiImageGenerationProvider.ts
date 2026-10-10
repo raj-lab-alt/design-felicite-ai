@@ -1,12 +1,17 @@
 import { AppError } from '@shared/errors'
 import { mapGeminiError } from './errors'
 import { buildContents } from './GeminiVisionProvider'
-import type { GeminiClientFactory, ImageGenerationProvider, ImageGenRequest, ImageGenResponse } from './types'
+import type {
+  GeminiClientFactory,
+  ImageGenerationProvider,
+  ImageGenRequest,
+  ProviderImageGenResponse
+} from './types'
 
 export class GeminiImageGenerationProvider implements ImageGenerationProvider {
   constructor(private readonly getClient: GeminiClientFactory) {}
 
-  async generate(request: ImageGenRequest): Promise<ImageGenResponse> {
+  async generate(request: ImageGenRequest): Promise<ProviderImageGenResponse> {
     const ai = this.getClient()
     const started = Date.now()
     try {

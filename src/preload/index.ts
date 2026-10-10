@@ -39,6 +39,10 @@ const api: DesignApi = {
     status: () => invoke(IPC.secrets.status) as ReturnType<DesignApi['secrets']['status']>,
     setApiKey: (apiKey) =>
       invoke(IPC.secrets.setApiKey, apiKey) as ReturnType<DesignApi['secrets']['setApiKey']>,
+    removeApiKey: (index) =>
+      invoke(IPC.secrets.removeApiKey, index) as ReturnType<DesignApi['secrets']['removeApiKey']>,
+    prioritizeApiKey: (index) =>
+      invoke(IPC.secrets.prioritizeApiKey, index) as ReturnType<DesignApi['secrets']['prioritizeApiKey']>,
     testConnection: () =>
       invoke(IPC.secrets.testConnection) as ReturnType<DesignApi['secrets']['testConnection']>,
     deleteApiKey: () =>

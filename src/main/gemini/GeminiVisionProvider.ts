@@ -1,7 +1,13 @@
 import type { Part } from '@google/genai'
 import { AppError } from '@shared/errors'
 import { mapGeminiError } from './errors'
-import type { GeminiClientFactory, TokenUsage, VisionProvider, VisionRequest, VisionResponse } from './types'
+import type {
+  GeminiClientFactory,
+  ProviderVisionResponse,
+  TokenUsage,
+  VisionProvider,
+  VisionRequest
+} from './types'
 
 export function buildContents(
   instruction: string,
@@ -17,7 +23,7 @@ export function buildContents(
 export class GeminiVisionProvider implements VisionProvider {
   constructor(private readonly getClient: GeminiClientFactory) {}
 
-  async complete(request: VisionRequest): Promise<VisionResponse> {
+  async complete(request: VisionRequest): Promise<ProviderVisionResponse> {
     const ai = this.getClient()
     const started = Date.now()
     try {

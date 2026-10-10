@@ -127,7 +127,7 @@ export class RedesignService {
       sourceImageId,
       mode: req.mode as RedesignMode,
       promptText: prompt,
-      model: settings.imageModel,
+      model: settings.imageModels[0] ?? '',
       selectedRecommendationIds: req.selectedRecommendationIds,
       extraInstruction: req.extraInstruction,
       params: { origin, warnings, mode: req.mode }
@@ -148,8 +148,7 @@ export class RedesignService {
       const optimized = await this.optimizer.optimize(buffer, IMAGE_LIMITS.maxUploadSide)
 
       this.progress(variantId, 'generate', 40, 'Génération de la variante en cours…')
-      const generated = await this.gemini.imageProvider().generate({
-        model: settings.imageModel,
+      const generated = await this.gemini.generateImage({
         prompt,
         referenceImages: [{ mimeType: optimized.mimeType, base64: optimized.base64 }],
         signal: controller.signal
@@ -162,8 +161,20 @@ export class RedesignService {
         `variant-${variantId}.${generated.mimeType.split('/')[1] ?? 'png'}`,
         'generated'
       )
-      this.insertVariant({ ...base, status: 'completed', imageId: saved.id, errorCode: null })
-      logger.info('Variante générée', { variantId, model: settings.imageModel, durationMs: generated.durationMs })
+      this.insertVariant({
+        ...base,
+        model: generated.model,
+        status: 'completed',
+        imageId: saved.id,
+        errorCode: null
+      })
+      logger.info('Variante générée', {
+        variantId,
+        model: generated.model,
+        keyIndex: generated.apiKeyIndex,
+        failoverAttempts: generated.failoverAttempts,
+        durationMs: generated.durationMs
+      })
       this.progress(variantId, 'done', 100, 'Variante générée.')
       return this.getVariant(variantId)
     } catch (error) {

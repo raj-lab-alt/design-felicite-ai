@@ -108,6 +108,8 @@ export function registerIpc(deps: IpcDeps): void {
     configured: deps.secureStorage.hasKey(),
     encryptionAvailable: deps.secureStorage.isEncryptionAvailable(),
     storageMode: deps.secureStorage.storageMode(),
+    keyCount: deps.secureStorage.keyCount(),
+    maskedKeys: deps.secureStorage.maskedKeys(),
     lastTestAt: deps.settings.get().lastApiTestAt,
     lastTestOk: deps.settings.get().lastApiTestOk
   })
@@ -140,8 +142,24 @@ export function registerIpc(deps: IpcDeps): void {
         throw error
       }
     }
-    deps.gemini.onApiKeyChanged()
-    logger.info('Clé API mise à jour', { storageMode: deps.secureStorage.storageMode() })
+    deps.gemini.onKeysChanged()
+    logger.info('Clé API ajoutée', { keyCount: deps.secureStorage.keyCount() })
+    return secretStatus()
+  })
+
+  handle(IPC.secrets.removeApiKey, (indexRaw) => {
+    const index = Number(indexRaw)
+    deps.secureStorage.removeApiKey(index)
+    deps.gemini.onKeysChanged()
+    logger.info('Clé API retirée', { keyCount: deps.secureStorage.keyCount() })
+    return secretStatus()
+  })
+
+  handle(IPC.secrets.prioritizeApiKey, (indexRaw) => {
+    const index = Number(indexRaw)
+    deps.secureStorage.prioritizeApiKey(index)
+    deps.gemini.onKeysChanged()
+    logger.info('Clé API principale modifiée')
     return secretStatus()
   })
 
@@ -153,8 +171,8 @@ export function registerIpc(deps: IpcDeps): void {
 
   handle(IPC.secrets.deleteApiKey, () => {
     deps.secureStorage.deleteApiKey()
-    deps.gemini.onApiKeyChanged()
-    logger.info('Clé API supprimée')
+    deps.gemini.onKeysChanged()
+    logger.info('Clés API supprimées')
     return secretStatus()
   })
 

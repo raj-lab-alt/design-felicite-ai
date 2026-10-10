@@ -116,6 +116,7 @@ export class DesignAnalysisService {
     const analysisId = newId('anl')
     const startedAt = Date.now()
     const now = nowIso()
+    const primaryModel = settings.analysisModels[0] ?? ''
     this.db.run(
       `INSERT INTO analyses
          (id, project_id, image_id, status, model, provider, protocol_version, context_json, brand_profile_id, created_at, updated_at)
@@ -124,7 +125,7 @@ export class DesignAnalysisService {
         analysisId,
         projectId,
         imageId,
-        settings.analysisModel,
+        primaryModel,
         PROTOCOL_VERSION,
         JSON.stringify(context),
         brandProfileId ?? null,
@@ -151,7 +152,7 @@ export class DesignAnalysisService {
       const { payload, response, parseErrors } = await this.requestWithRepair(
         analysisId,
         controller.signal,
-        settings.analysisModel,
+        settings.analysisModels,
         protocol.text,
         instruction,
         optimized.mimeType,
@@ -172,7 +173,7 @@ export class DesignAnalysisService {
         felicityIndex: computed.felicityIndex,
         modelMetadata: {
           provider: 'gemini',
-          model: settings.analysisModel,
+          model: response.model,
           protocolVersion: PROTOCOL_VERSION,
           reportSchemaVersion: REPORT_SCHEMA_VERSION,
           generatedAt: nowIso(),
@@ -190,8 +191,10 @@ export class DesignAnalysisService {
       }
       logger.info('Analyse terminée', {
         analysisId,
-        model: settings.analysisModel,
-        durationMs: Date.now() - startedAt,
+        model: response.model,
+        keyIndex: response.apiKeyIndex,
+        failoverAttempts: response.failoverAttempts,
+        latencyMs: Date.now() - startedAt,
         repairs: parseErrors.length
       })
 
@@ -211,7 +214,7 @@ export class DesignAnalysisService {
   private async requestWithRepair(
     analysisId: string,
     signal: AbortSignal,
-    model: string,
+    models: string[],
     systemPrompt: string,
     baseInstruction: string,
     mimeType: string,
@@ -232,16 +235,18 @@ export class DesignAnalysisService {
         attempt === 0 ? 'Analyse multimodale en cours…' : `Tentative de réparation ${attempt}/${MAX_REPAIR_ATTEMPTS}…`
       )
 
-      const response = await this.gemini.visionProvider().complete({
-        model,
-        systemPrompt,
-        instruction,
-        images: [{ mimeType, base64 }],
-        responseJsonSchema: modelReportJsonSchema(),
-        temperature: attempt === 0 ? 0.2 : 0.1,
-        maxOutputTokens: 8192,
-        signal
-      })
+      const response = await this.gemini.completeVision(
+        {
+          systemPrompt,
+          instruction,
+          images: [{ mimeType, base64 }],
+          responseJsonSchema: modelReportJsonSchema(),
+          temperature: attempt === 0 ? 0.2 : 0.1,
+          maxOutputTokens: 8192,
+          signal
+        },
+        models
+      )
       lastResponse = response
 
       try {
@@ -276,8 +281,8 @@ export class DesignAnalysisService {
     const now = nowIso()
     this.db.transaction(() => {
       this.db.run(
-        `UPDATE analyses SET status = 'completed', product_summary = ?, felicity_index = ?, updated_at = ? WHERE id = ?`,
-        [report.productSummary, report.felicityIndex.value, now, analysisId]
+        `UPDATE analyses SET status = 'completed', model = ?, product_summary = ?, felicity_index = ?, updated_at = ? WHERE id = ?`,
+        [response.model, report.productSummary, report.felicityIndex.value, now, analysisId]
       )
       this.db.run(
         `INSERT INTO analysis_results (analysis_id, report_json, report_schema_version, usage_json, created_at)

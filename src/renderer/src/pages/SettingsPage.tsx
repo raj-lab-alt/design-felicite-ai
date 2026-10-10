@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Download, KeyRound, Plus, RefreshCcw, Save, ShieldCheck, Trash2, Wand2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Download, KeyRound, Plus, RefreshCcw, Save, ShieldCheck, Trash2, Wand2, X } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -42,9 +42,106 @@ const emptyProfile: BrandProfileInput = {
   competitivePositioning: ''
 }
 
-function modelOptions(suggested: readonly string[], chosen: string): Array<{ value: string; label: string }> {
-  const all = [...new Set([chosen, ...suggested])].filter(Boolean)
-  return all.map((m) => ({ value: m, label: m }))
+/**
+ * Éditeur d'une liste ordonnée de modèles : le premier est le principal,
+ * les suivants servent de secours (bascule automatique en cas de panne).
+ */
+function ModelListEditor({
+  label,
+  hint,
+  models,
+  suggested,
+  onChange
+}: {
+  label: string
+  hint?: string
+  models: string[]
+  suggested: readonly string[]
+  onChange: (models: string[]) => void
+}): React.JSX.Element {
+  const [value, setValue] = useState('')
+
+  const addModel = (raw: string): void => {
+    const model = raw.trim()
+    if (!model) return
+    if (!models.some((m) => m === model)) {
+      onChange([...models, model])
+    }
+    setValue('')
+  }
+
+  const moveModel = (index: number, direction: -1 | 1): void => {
+    const target = index + direction
+    if (target < 0 || target >= models.length) return
+    const next = models.slice()
+    ;[next[index], next[target]] = [next[target], next[index]]
+    onChange(next)
+  }
+
+  const removeModel = (index: number): void => {
+    onChange(models.filter((_, i) => i !== index))
+  }
+
+  return (
+    <div className="space-y-2">
+      <Field label={label} hint={hint}>
+        <div className="flex gap-2">
+          <Input
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addModel(value)
+              }
+            }}
+            placeholder="ex. gemini-2.5-pro"
+          />
+          <Button size="sm" icon={<Plus className="h-4 w-4" />} onClick={() => addModel(value)}>
+            Ajouter
+          </Button>
+        </div>
+      </Field>
+      {models.length > 0 ? (
+        <ol className="space-y-1">
+          {models.map((model, index) => (
+            <li
+              key={index}
+              className="flex items-center gap-2 rounded-lg border border-line bg-panel-2 px-3 py-1.5"
+            >
+              <span className="text-xs text-ink-dim">{index + 1}.</span>
+              {index === 0 ? <Badge tone="ok">principal</Badge> : null}
+              <span className="min-w-0 flex-1 truncate text-sm text-ink">{model}</span>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button variant="ghost" size="sm" aria-label="Monter dans la priorité" disabled={index === 0} onClick={() => moveModel(index, -1)}>
+                  <ChevronUp className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" aria-label="Descendre dans la priorité" disabled={index === models.length - 1} onClick={() => moveModel(index, 1)}>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" aria-label="Retirer ce modèle" onClick={() => removeModel(index)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ol>
+      ) : null}
+      <div className="flex flex-wrap gap-1.5">
+        {suggested
+          .filter((m) => !models.some((x) => x === m))
+          .map((m) => (
+            <button
+              key={m}
+              onClick={() => addModel(m)}
+              className="rounded-full border border-line px-2 py-0.5 text-xs text-ink-dim transition-colors hover:border-accent/50 hover:text-accent"
+            >
+              + {m}
+            </button>
+          ))}
+      </div>
+    </div>
+  )
 }
 
 function updateStatusMessage(status: UpdateStatus): string {
@@ -79,7 +176,13 @@ export function SettingsPage(): React.JSX.Element {
   const [consent, setConsent] = useState(false)
   const [draft, setDraft] = useState<AppSettings | null>(null)
   const [testing, setTesting] = useState(false)
-  const [testResult, setTestResult] = useState<{ ok: boolean; latencyMs: number; message: string } | null>(null)
+  const [testResult, setTestResult] = useState<{
+    ok: boolean
+    latencyMs: number
+    message: string
+    usedFallback?: boolean
+    apiKeyIndex?: number
+  } | null>(null)
   const [saving, setSaving] = useState(false)
 
   const [profiles, setProfiles] = useState<BrandProfile[] | null>(null)
@@ -145,9 +248,29 @@ export function SettingsPage(): React.JSX.Element {
       await call(window.api.secrets.setApiKey(apiKey))
       setApiKey('')
       await refreshSecrets()
-      toast('success', 'Clé API enregistrée (chiffrée).')
+      toast('success', 'Clé API ajoutée (chiffrée).')
     } catch (error) {
       toast('error', error instanceof Error ? error.message : 'Enregistrement impossible.')
+    }
+  }
+
+  const removeApiKey = async (index: number): Promise<void> => {
+    try {
+      await call(window.api.secrets.removeApiKey(index))
+      await refreshSecrets()
+      toast('success', 'Clé API retirée.')
+    } catch (error) {
+      toast('error', error instanceof Error ? error.message : 'Suppression impossible.')
+    }
+  }
+
+  const prioritizeApiKey = async (index: number): Promise<void> => {
+    try {
+      await call(window.api.secrets.prioritizeApiKey(index))
+      await refreshSecrets()
+      toast('success', 'Clé principale modifiée.')
+    } catch (error) {
+      toast('error', error instanceof Error ? error.message : 'Modification impossible.')
     }
   }
 
@@ -156,7 +279,13 @@ export function SettingsPage(): React.JSX.Element {
     setTestResult(null)
     try {
       const result = await call(window.api.secrets.testConnection())
-      setTestResult({ ok: result.ok, latencyMs: result.latencyMs, message: result.message })
+      setTestResult({
+        ok: result.ok,
+        latencyMs: result.latencyMs,
+        message: result.message,
+        usedFallback: result.usedFallback,
+        apiKeyIndex: result.apiKeyIndex
+      })
     } catch (error) {
       setTestResult({ ok: false, latencyMs: 0, message: error instanceof Error ? error.message : 'Test impossible.' })
     } finally {
@@ -257,27 +386,30 @@ export function SettingsPage(): React.JSX.Element {
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4 text-accent" /> Clé API Gemini
+              <KeyRound className="h-4 w-4 text-accent" /> Clés API Gemini
             </span>
           }
           subtitle={
             sec.configured
-              ? `Clé configurée · stockage ${sec.storageMode}${sec.lastTestAt ? ` · dernier test : ${formatDateTime(sec.lastTestAt)} (${sec.lastTestOk === null ? '—' : sec.lastTestOk ? 'OK' : 'échec'})` : ''}`
+              ? `${sec.keyCount} clé${sec.keyCount > 1 ? 's' : ''} configurée${sec.keyCount > 1 ? 's' : ''} · stockage ${sec.storageMode}${sec.lastTestAt ? ` · dernier test : ${formatDateTime(sec.lastTestAt)} (${sec.lastTestOk === null ? '—' : sec.lastTestOk ? 'OK' : 'échec'})` : ''}`
               : 'Aucune clé enregistrée : les analyses sont indisponibles.'
           }
         />
         <div className="space-y-3">
-          <Field label="Clé API" hint="chiffrée sur votre machine, jamais envoyée ailleurs">
+          <Field
+            label="Nouvelle clé API"
+            hint="plusieurs clés possibles : En cas d’épuisement (quota) ou de refus, l’application bascule automatiquement sur la suivante"
+          >
             <Input
               type="password"
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={sec.configured ? '•••••••• (laissée vide = inchangée)' : 'Collez votre clé API Gemini'}
+              placeholder="Collez votre clé API Gemini"
             />
           </Field>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" icon={<Save className="h-4 w-4" />} onClick={() => void saveApiKey()}>
-              Enregistrer la clé
+              Ajouter la clé
             </Button>
             <Button size="sm" variant="outline" icon={<RefreshCcw className="h-4 w-4" />} loading={testing} onClick={() => void testConnection()}>
               Tester la connexion
@@ -288,21 +420,42 @@ export function SettingsPage(): React.JSX.Element {
                 variant="danger"
                 icon={<Trash2 className="h-4 w-4" />}
                 onClick={() => {
-                  if (confirm('Supprimer la clé API enregistrée ?')) void call(window.api.secrets.deleteApiKey()).then(refreshSecrets)
+                  if (confirm('Supprimer toutes les clés API enregistrées ?')) void call(window.api.secrets.deleteApiKey()).then(refreshSecrets)
                 }}
               >
-                Supprimer
+                Tout supprimer
               </Button>
             ) : null}
           </div>
+          {sec.keyCount > 0 ? (
+            <ol className="space-y-1">
+              {sec.maskedKeys.map((masked, index) => (
+                <li key={index} className="flex items-center gap-2 rounded-lg border border-line bg-panel-2 px-3 py-1.5">
+                  <span className="text-xs text-ink-dim">{index + 1}.</span>
+                  {index === 0 ? <Badge tone="ok">principale</Badge> : null}
+                  <code className="min-w-0 flex-1 truncate font-mono text-sm text-ink">{masked}</code>
+                  <div className="flex shrink-0 items-center gap-1">
+                    {index !== 0 ? (
+                      <Button size="sm" variant="ghost" onClick={() => void prioritizeApiKey(index)}>
+                        Définir principale
+                      </Button>
+                    ) : null}
+                    <Button size="sm" variant="ghost" icon={<X className="h-4 w-4" />} aria-label="Retirer cette clé" onClick={() => void removeApiKey(index)} />
+                  </div>
+                </li>
+              ))}
+            </ol>
+          ) : null}
           {testResult ? (
             <Badge tone={testResult.ok ? 'ok' : 'danger'}>
-              {testResult.ok ? `Connexion OK (${testResult.latencyMs} ms)` : testResult.message}
+              {testResult.ok
+                ? `Connexion OK (${testResult.latencyMs} ms${testResult.usedFallback ? ` · bascule utilisée (clé ${(testResult.apiKeyIndex ?? 0) + 1})` : ''})`
+                : testResult.message}
             </Badge>
           ) : null}
           {sec.storageMode === 'unavailable' ? (
             <p className="text-xs text-warn">
-              Le chiffrement natif est indisponible sur cette machine : la clé sera stockée en clair dans un fichier local avec
+              Le chiffrement natif est indisponible sur cette machine : les clés seront stockées en clair dans un fichier local avec
               permissions restreintes. Acceptez le consentement pour confirmer.
             </p>
           ) : null}
@@ -344,20 +497,20 @@ export function SettingsPage(): React.JSX.Element {
           subtitle="Vous pouvez choisir librement tout modèle Gemini compatible."
         />
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Modèle d’analyse (vision + texte)">
-            <Select
-              options={modelOptions(SUGGESTED_ANALYSIS_MODELS, draft.analysisModel)}
-              value={draft.analysisModel}
-              onValueChange={(value) => patch('analysisModel', value)}
-            />
-          </Field>
-          <Field label="Modèle de génération d’images">
-            <Select
-              options={modelOptions(SUGGESTED_IMAGE_MODELS, draft.imageModel)}
-              value={draft.imageModel}
-              onValueChange={(value) => patch('imageModel', value)}
-            />
-          </Field>
+          <ModelListEditor
+            label="Modèles d’analyse (vision + texte)"
+            hint="le premier est le principal ; en cas de panne ou de non-réponse, l’application bascule sur le suivant"
+            models={draft.analysisModels}
+            suggested={SUGGESTED_ANALYSIS_MODELS}
+            onChange={(models) => patch('analysisModels', models)}
+          />
+          <ModelListEditor
+            label="Modèles de génération d’images"
+            hint="même mécanique de bascule automatique en cas de panne"
+            models={draft.imageModels}
+            suggested={SUGGESTED_IMAGE_MODELS}
+            onChange={(models) => patch('imageModels', models)}
+          />
           <Field label="Génération d’images">
             <div className="flex items-center gap-2">
               <Switch checked={draft.imageGenerationEnabled} onCheckedChange={(checked) => patch('imageGenerationEnabled', checked)} label="Activer la génération" />

@@ -1,8 +1,37 @@
 import { ApiError } from '@google/genai'
-import { AppError } from '@shared/errors'
+import { AppError, type AppErrorCode } from '@shared/errors'
 
 export function isAbortError(error: unknown): boolean {
   return error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')
+}
+
+/**
+ * Erreurs qui doivent déclencher une bascule vers une AUTRE clé API :
+ * clé refusée/expirée, quota épuisé, limite de débit atteinte.
+ */
+export const KEY_SWITCHABLE_ERRORS: ReadonlySet<AppErrorCode> = new Set<AppErrorCode>([
+  'ERR_API_UNAUTHORIZED',
+  'ERR_QUOTA_EXCEEDED',
+  'ERR_RATE_LIMITED'
+])
+
+/**
+ * Erreurs qui doivent déclencher une bascule vers un AUTRE modèle :
+ * modèle indisponible, panne/indisponibilité serveur, délai dépassé, réponse vide.
+ */
+export const MODEL_SWITCHABLE_ERRORS: ReadonlySet<AppErrorCode> = new Set<AppErrorCode>([
+  'ERR_MODEL_UNAVAILABLE',
+  'ERR_NETWORK',
+  'ERR_TIMEOUT',
+  'ERR_RESPONSE_EMPTY'
+])
+
+export function canSwitchKey(errorCode: AppErrorCode): boolean {
+  return KEY_SWITCHABLE_ERRORS.has(errorCode)
+}
+
+export function canSwitchModel(errorCode: AppErrorCode): boolean {
+  return MODEL_SWITCHABLE_ERRORS.has(errorCode)
 }
 
 /** Traduit une erreur du SDK Google GenAI en AppError stable, sans exposer de secret. */

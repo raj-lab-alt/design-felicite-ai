@@ -37,6 +37,8 @@ export const IPC = {
   secrets: {
     status: 'secrets:status',
     setApiKey: 'secrets:set-api-key',
+    removeApiKey: 'secrets:remove-api-key',
+    prioritizeApiKey: 'secrets:prioritize-api-key',
     testConnection: 'secrets:test-connection',
     deleteApiKey: 'secrets:delete-api-key'
   },
@@ -230,6 +232,10 @@ export interface SecretStatusDTO {
   configured: boolean
   encryptionAvailable: boolean
   storageMode: 'encrypted' | 'unavailable' | 'none'
+  /** Nombre de clés API configurées (ordre = priorité de bascule). */
+  keyCount: number
+  /** Aperçu masqué de chaque clé (jamais la clé complète). */
+  maskedKeys: string[]
   lastTestAt: string | null
   lastTestOk: boolean | null
 }
@@ -240,6 +246,12 @@ export interface ConnectionTestResultDTO {
   latencyMs: number
   message: string
   errorCode?: AppErrorCode
+  /** Index de la clé finalement utilisée (0 = principale). */
+  apiKeyIndex?: number
+  /** Indique qu'une bascule clé ou modèle a été nécessaire. */
+  usedFallback?: boolean
+  /** Nombre de tentatives effectuées. */
+  attempts?: number
 }
 
 export interface AppInfoDTO {
@@ -346,6 +358,8 @@ export interface DesignApi {
   secrets: {
     status(): Promise<IpcResult<SecretStatusDTO>>
     setApiKey(apiKey: string): Promise<IpcResult<SecretStatusDTO>>
+    removeApiKey(index: number): Promise<IpcResult<SecretStatusDTO>>
+    prioritizeApiKey(index: number): Promise<IpcResult<SecretStatusDTO>>
     testConnection(): Promise<IpcResult<ConnectionTestResultDTO>>
     deleteApiKey(): Promise<IpcResult<SecretStatusDTO>>
   }

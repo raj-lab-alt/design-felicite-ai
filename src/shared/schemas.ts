@@ -380,8 +380,15 @@ export type ExperimentResultInput = z.infer<typeof experimentResultInputSchema>
 
 export const appSettingsSchema = z.object({
   language: z.enum(['fr', 'en']).default('fr'),
-  analysisModel: z.string().min(1).max(120).default(DEFAULT_ANALYSIS_MODEL),
-  imageModel: z.string().min(1).max(120).default(DEFAULT_IMAGE_MODEL),
+  /**
+   * Modèles d'analyse, par ordre de préférence (le premier est le modèle principal).
+   * En cas de panne ou de non-réponse, l'application bascule automatiquement sur le suivant.
+   */
+  analysisModels: z.array(z.string().min(1).max(120)).min(1).max(8).default([DEFAULT_ANALYSIS_MODEL]),
+  /**
+   * Modèles de génération d'images, par ordre de préférence (même mécanique de bascule).
+   */
+  imageModels: z.array(z.string().min(1).max(120)).min(1).max(8).default([DEFAULT_IMAGE_MODEL]),
   imageGenerationEnabled: z.boolean().default(false),
   qualityPreset: z.enum(['economy', 'balanced', 'quality']).default('balanced'),
   maxUploadSide: z.number().int().min(512).max(4096).default(1600),
