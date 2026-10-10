@@ -63,5 +63,20 @@ propositions de redesign, génération d'images, expériences A/B, exports PDF/J
 - Itération locale sans réinstallation : `npm run dev` (le canal est inactif non empaqueté).
 - Dépôt GitHub **public** requis (pas de jeton embarqué).
 
+### Règle permanente : toute modification du code doit être livrable via l'app
+Après **chaque** changement de code (correctif, fonctionnalité, réglage), l'agent doit rendre la
+mise à jour disponible dans l'app sans réinstallation, en enchaînant :
+1. `npm run release:check` (typecheck + lint + unit/integration + build + e2e) — **vert obligatoire**.
+2. Committer les changements (`git add` ciblés + `git commit`).
+3. `npm run release:patch` (bump `version` + commit + tag `vX.Y.Z`) — ou `npm version minor`/`major`
+   si pertinent ; l'updater n'installe qu'une version **strictement** supérieure.
+4. `git push --follow-tags origin main` → le workflow `release.yml` publie la Release.
+5. Vérifier la CI (`gh run watch` / API `actions/runs`) jusqu'à `completed/success` et confirmer
+   `latest.yml` + `design-felicite-ai-X.Y.Z-setup.exe` présents sur la Release.
+
+Ne pas pousser si les tests échouent. Ne jamais réutiliser/écraser un tag déjà publié : toujours
+bumper. Le premier canal actif nécessite une réinstall manuelle de la version ≥ 0.1.1 (embarque
+`app-update.yml`), ensuite tout passe par l'app.
+
 ## Docs
 Voir `README.md` (usage, développeur) et `SECURITY.md` (menaces, secrets, canal de mise à jour).

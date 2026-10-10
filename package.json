@@ -31,6 +31,8 @@
     "dist:dir": "electron-vite build && electron-builder --win --dir",
     "dist:ci": "electron-vite build && electron-builder --win --publish never",
     "dist:publish": "electron-vite build && electron-builder --win --publish always",
+    "release:check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run test:e2e",
+    "release:patch": "npm run release:check && npm version patch",
     "postinstall": "node scripts/patch-electronrc.mjs"
   },
   "dependencies": {
