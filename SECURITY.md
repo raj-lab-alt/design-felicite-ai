@@ -32,11 +32,17 @@ Application de bureau locale (Windows, Electron 44). Elle manipule des designs c
 
 Le protocole interdit au modèle de promettre des résultats de vente ou de recourir à des mesures neurologiques pseudo-scientifiques ; les recommandations opérationnelles sélectionnées servent, elles, au redesign.
 
-## 6. Vulnérabilités connues / limitations
+## 6. Canal de mise à jour
+
+- Désactivé par défaut (aucun dépôt configuré) ; activé uniquement si un `publish` est défini à la compilation ou si `DESIGN_FELICITE_UPDATE_URL` est renseignée.
+- Les artefacts de mise à jour sont vérifiés par `electron-updater` ; la vérification de signature logicielle (`NsisUpdater`) ne s'active qu'une fois l'application elle-même signée.
+- Le téléchargement est contrôlé par l'utilisateur (jamais automatique sans confirmation d'installation).
+
+## 7. Vulnérabilités connues / limitations
 
 - `safeStorage` peut échouer (clé DPAPI indisponible) ; dans ce cas un message explicite prévient que la clé est stockée en clair.
 - L'exécutable de distribution n'est pas signé (pas de certificat) ; Windows peut afficher SmartScreen au premier lancement.
 
-## 7. Signaler un problème
+## 8. Signaler un problème
 
 Signaler une vulnérabilité via l'issue tracker du projet (aucun canal public dédié pour l'instant). Ne pas publier de détails exploitables avant correction.

@@ -25,6 +25,9 @@ win:
         - x64
   icon: build/icon.ico
   artifactName: ${productName}-${version}-setup.${ext}
+  signtoolOptions:
+    signingHashAlgorithms:
+      - sha256
 
 nsis:
   oneClick: false
@@ -40,4 +43,24 @@ nsis:
     - en_US
   language: 1036
 
+# Canal de mise à jour (electron-updater) :
+#  1. Ajouter ici une section `publish` (ex. provider gitHub avec owner/repo, ou
+#     provider generic avec une URL https) pour que electron-builder génère
+#     `Resources/app-update.yml` et que l'application puisse se mettre à jour.
+#  2. Publier chaque release avec `npm run dist && npm run dist:publish`.
+#  Exemple :
+#    publish:
+#      provider: generic
+#      url: https://exemple.com/updates/
+#  Sans section `publish`, le canal est désactivé sans effet de bord.
+# Canal de mise à jour (electron-updater) :
+#  1. Ajouter ici une section `publish` (ex. provider gitHub avec owner/repo, ou
+#     provider generic avec une URL https) pour que electron-builder génère
+#     `Resources/app-update.yml` et que l'application puisse se mettre à jour.
+#  2. Publier chaque release avec `npm run dist && npm run dist:publish`.
+#  Exemple :
+#    publish:
+#      provider: generic
+#      url: https://exemple.com/updates/
+#  Sans section `publish`, le canal est désactivé sans effet de bord.
 publish: null

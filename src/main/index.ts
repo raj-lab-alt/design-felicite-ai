@@ -24,6 +24,7 @@ import { ExperimentService } from './services/ExperimentService'
 import { ExportService } from './services/ExportService'
 import { DiagnosticsService, type AppPaths } from './services/DiagnosticsService'
 import { UsageService } from './services/UsageService'
+import { UpdaterService } from './services/UpdaterService'
 import { NativeImageOptimizer } from './utils/imageOptimizer'
 import { loadProtocol } from './protocol/loadProtocol'
 import { GeminiService } from './gemini/GeminiService'
@@ -120,6 +121,12 @@ const experiments = new ExperimentService(db)
 const exportsService = new ExportService(db, media, analysis, exportsPath)
 const diagnostics = new DiagnosticsService(db, secureStorage, gemini, paths)
 const usage = new UsageService(db)
+const updater = new UpdaterService()
+updater.onChange((status) => {
+  for (const win of BrowserWindow.getAllWindows()) {
+    if (!win.isDestroyed()) win.webContents.send(IPC_EVENTS.updateStatus, status)
+  }
+})
 
 /* ------------------------------------------------------------------ */
 /* IPC (liste blanche)                                                 */
@@ -138,6 +145,7 @@ registerIpc({
   exports: exportsService,
   diagnostics,
   usage,
+  updater,
   paths: { userDataPath, logsPath, dbPath },
   appVersion: app.getVersion()
 })
@@ -218,6 +226,11 @@ function createWindow(): void {
 
   mainWindow = window
   window.once('ready-to-show', () => window.show())
+  window.webContents.on('did-finish-load', () => {
+    if (!window.isDestroyed()) {
+      window.webContents.send(IPC_EVENTS.updateStatus, updater.status())
+    }
+  })
 
   if (isDev) {
     void window.loadURL(process.env.ELECTRON_RENDERER_URL as string)

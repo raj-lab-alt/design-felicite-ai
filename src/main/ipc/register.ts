@@ -22,6 +22,7 @@ import type { ExperimentService } from '../services/ExperimentService'
 import type { ExportService } from '../services/ExportService'
 import type { DiagnosticsService } from '../services/DiagnosticsService'
 import type { UsageService } from '../services/UsageService'
+import type { UpdaterService } from '../services/UpdaterService'
 import type { GeminiService } from '../gemini/GeminiService'
 import { nowIso } from '../utils/ids'
 import { logger } from '../utils/logger'
@@ -40,6 +41,7 @@ export interface IpcDeps {
   exports: ExportService
   diagnostics: DiagnosticsService
   usage: UsageService
+  updater: UpdaterService
   paths: { userDataPath: string; logsPath: string; dbPath: string }
   appVersion: string
 }
@@ -90,6 +92,12 @@ export function registerIpc(deps: IpcDeps): void {
   handle(IPC.app.openDataDir, async () => {
     await shell.openPath(deps.paths.userDataPath)
   })
+
+  handle(IPC.app.checkUpdate, () => deps.updater.check())
+  handle(IPC.app.installUpdate, () => {
+    deps.updater.install()
+  })
+  handle(IPC.app.updateStatus, () => deps.updater.status())
 
   /* ---------------- Settings ---------------- */
   handle(IPC.settings.get, () => deps.settings.get())

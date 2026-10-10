@@ -25,6 +25,7 @@
     "make-icon": "node scripts/make-icon.mjs",
     "dist": "electron-vite build && electron-builder --win",
     "dist:dir": "electron-vite build && electron-builder --win --dir",
+    "dist:publish": "electron-vite build && electron-builder --win --publish always",
     "postinstall": "node scripts/patch-electronrc.mjs"
   },
   "dependencies": {
@@ -36,6 +37,7 @@
     "@radix-ui/react-tabs": "^1.1.20",
     "@radix-ui/react-tooltip": "^1.3.0",
     "clsx": "^2.1.1",
+    "electron-updater": "^6.8.9",
     "lucide-react": "^1.54.0",
     "node-sqlite3-wasm": "^0.8.60",
     "pdfmake": "^0.3.11",

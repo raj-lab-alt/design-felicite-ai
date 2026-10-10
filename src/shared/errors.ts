@@ -27,6 +27,7 @@ export type AppErrorCode =
   | 'ERR_EXPORT'
   | 'ERR_CANCELLED'
   | 'ERR_NOT_FOUND'
+  | 'ERR_NOT_READY'
   | 'ERR_ENCRYPTION_UNAVAILABLE'
   | 'ERR_IMAGE_GENERATION_UNAVAILABLE'
 
@@ -54,6 +55,7 @@ const USER_MESSAGES: Record<AppErrorCode, string> = {
   ERR_EXPORT: "L'export a échoué. Le rapport a été conservé localement.",
   ERR_CANCELLED: 'Opération annulée.',
   ERR_NOT_FOUND: 'Élément introuvable.',
+  ERR_NOT_READY: "L'opération n'est pas prête pour l'instant.",
   ERR_ENCRYPTION_UNAVAILABLE:
     "Le chiffrement système n'est pas disponible : la clé API ne peut pas être protégée de façon sûre.",
   ERR_IMAGE_GENERATION_UNAVAILABLE:

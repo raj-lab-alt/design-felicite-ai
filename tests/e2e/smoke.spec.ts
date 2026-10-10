@@ -24,4 +24,26 @@ test.describe('Application de bureau (smoke)', () => {
       rmSync(home, { recursive: true, force: true })
     }
   })
+
+  test('les paramètres affichent le canal de mise à jour (état vu par le renderer)', async () => {
+    const home = mkdtempSync(join(tmpdir(), 'design-felicite-e2e-'))
+    try {
+      const electronApp = await electron.launch({
+        args: [join(__dirname, '../../out/main/index.js')],
+        env: { ...process.env as Record<string, string>, DESIGN_FELICITE_HOME: home }
+      })
+
+      const window = await electronApp.firstWindow()
+      await window.waitForLoadState('domcontentloaded')
+
+      await window.getByRole('link', { name: 'Paramètres' }).click()
+      // En développement (non empaqueté), le canal est désactivé : l'IPC
+      // `app:check-update` doit répondre sans erreur et afficher l'état.
+      await expect(window.getByTestId('update-status')).toContainText('Mises à jour désactivées')
+
+      await electronApp.close()
+    } finally {
+      rmSync(home, { recursive: true, force: true })
+    }
+  })
 })

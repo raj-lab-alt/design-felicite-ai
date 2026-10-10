@@ -25,7 +25,10 @@ export const IPC = {
   app: {
     info: 'app:info',
     openLogs: 'app:open-logs',
-    openDataDir: 'app:open-data-dir'
+    openDataDir: 'app:open-data-dir',
+    checkUpdate: 'app:check-update',
+    installUpdate: 'app:install-update',
+    updateStatus: 'app:update-status'
   },
   settings: {
     get: 'settings:get',
@@ -103,7 +106,8 @@ export const IPC = {
 
 export const IPC_EVENTS = {
   analysisProgress: 'event:analysis-progress',
-  redesignProgress: 'event:redesign-progress'
+  redesignProgress: 'event:redesign-progress',
+  updateStatus: 'event:update-status'
 } as const
 
 /* ------------------------------------------------------------------ */
@@ -250,6 +254,20 @@ export interface AppInfoDTO {
   logsPath: string
 }
 
+/**
+ * État observable du canal de mise à jour. « disabled » signifie qu'aucun
+ * dépôt de publication n'est configuré pour cette installation.
+ */
+export type UpdateStatus =
+  | { state: 'disabled'; message: string }
+  | { state: 'idle'; currentVersion: string }
+  | { state: 'checking'; message: string }
+  | { state: 'available'; version: string; notes: string | null }
+  | { state: 'up-to-date'; message: string }
+  | { state: 'downloading'; percent: number }
+  | { state: 'downloaded'; version: string }
+  | { state: 'error'; message: string }
+
 export interface DiagnosticsDTO {
   dbPath: string
   dbSizeBytes: number
@@ -317,6 +335,9 @@ export interface DesignApi {
     info(): Promise<IpcResult<AppInfoDTO>>
     openLogs(): Promise<IpcResult<void>>
     openDataDir(): Promise<IpcResult<void>>
+    checkUpdate(): Promise<IpcResult<UpdateStatus>>
+    installUpdate(): Promise<IpcResult<void>>
+    updateStatus(): Promise<IpcResult<UpdateStatus>>
   }
   settings: {
     get(): Promise<IpcResult<AppSettings>>
@@ -398,5 +419,6 @@ export interface DesignApi {
   events: {
     onAnalysisProgress(cb: (event: AnalysisProgressEvent) => void): () => void
     onRedesignProgress(cb: (event: RedesignProgressEvent) => void): () => void
+    onUpdateStatus(cb: (status: UpdateStatus) => void): () => void
   }
 }

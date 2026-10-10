@@ -4,7 +4,8 @@ import {
   IPC_EVENTS,
   type AnalysisProgressEvent,
   type DesignApi,
-  type RedesignProgressEvent
+  type RedesignProgressEvent,
+  type UpdateStatus
 } from '@shared/ipc'
 
 /**
@@ -25,7 +26,10 @@ const api: DesignApi = {
   app: {
     info: () => invoke(IPC.app.info) as ReturnType<DesignApi['app']['info']>,
     openLogs: () => invoke(IPC.app.openLogs) as ReturnType<DesignApi['app']['openLogs']>,
-    openDataDir: () => invoke(IPC.app.openDataDir) as ReturnType<DesignApi['app']['openDataDir']>
+    openDataDir: () => invoke(IPC.app.openDataDir) as ReturnType<DesignApi['app']['openDataDir']>,
+    checkUpdate: () => invoke(IPC.app.checkUpdate) as ReturnType<DesignApi['app']['checkUpdate']>,
+    installUpdate: () => invoke(IPC.app.installUpdate) as ReturnType<DesignApi['app']['installUpdate']>,
+    updateStatus: () => invoke(IPC.app.updateStatus) as ReturnType<DesignApi['app']['updateStatus']>
   },
   settings: {
     get: () => invoke(IPC.settings.get) as ReturnType<DesignApi['settings']['get']>,
@@ -132,7 +136,8 @@ const api: DesignApi = {
     onAnalysisProgress: (cb: (event: AnalysisProgressEvent) => void) =>
       subscribe(IPC_EVENTS.analysisProgress, cb),
     onRedesignProgress: (cb: (event: RedesignProgressEvent) => void) =>
-      subscribe(IPC_EVENTS.redesignProgress, cb)
+      subscribe(IPC_EVENTS.redesignProgress, cb),
+    onUpdateStatus: (cb: (status: UpdateStatus) => void) => subscribe(IPC_EVENTS.updateStatus, cb)
   }
 }
 

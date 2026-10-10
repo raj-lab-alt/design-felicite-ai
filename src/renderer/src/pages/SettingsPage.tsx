@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { KeyRound, Plus, RefreshCcw, Save, ShieldCheck, Trash2, Wand2 } from 'lucide-react'
+import { Download, KeyRound, Plus, RefreshCcw, Save, ShieldCheck, Trash2, Wand2 } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -19,7 +19,7 @@ import { formatDateTime } from '../lib/format'
 import { useAppStore } from '../store/useAppStore'
 import { SUGGESTED_ANALYSIS_MODELS, SUGGESTED_IMAGE_MODELS, WEIGHT_PROFILES } from '@shared/constants'
 import type { AppSettings, AppSettingsPatch, BrandProfile, BrandProfileInput } from '@shared/schemas'
-import type { SecretStatusDTO } from '@shared/ipc'
+import type { SecretStatusDTO, UpdateStatus } from '@shared/ipc'
 
 const emptyProfile: BrandProfileInput = {
   name: '',
@@ -47,6 +47,26 @@ function modelOptions(suggested: readonly string[], chosen: string): Array<{ val
   return all.map((m) => ({ value: m, label: m }))
 }
 
+function updateStatusMessage(status: UpdateStatus): string {
+  switch (status.state) {
+    case 'disabled':
+      return `${status.message} Aucun dépôt de publication n'est configuré.`
+    case 'idle':
+      return `Version installée : ${status.currentVersion}.`
+    case 'checking':
+      return status.message
+    case 'available':
+      return `Une nouvelle version (v${status.version}) est disponible.`
+    case 'up-to-date':
+    case 'downloading':
+      return status.state === 'downloading' ? `Téléchargement… ${status.percent} %` : status.message
+    case 'downloaded':
+      return `La version v${status.version} est téléchargée, prête à être installée.`
+    case 'error':
+      return status.message
+  }
+}
+
 export function SettingsPage(): React.JSX.Element {
   const settings = useAppStore((s) => s.settings)
   const secrets = useAppStore((s) => s.secrets)
@@ -66,6 +86,9 @@ export function SettingsPage(): React.JSX.Element {
   const [profileEditor, setProfileEditor] = useState<{ mode: 'create' | 'edit'; id?: string } | null>(null)
   const [profileForm, setProfileForm] = useState<BrandProfileInput>(emptyProfile)
 
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null)
+  const [checkingUpdate, setCheckingUpdate] = useState(false)
+
   const loadProfiles = useCallback(async () => {
     try {
       setProfiles(await call(window.api.profiles.list()))
@@ -79,6 +102,17 @@ export function SettingsPage(): React.JSX.Element {
     setConsent(!!settings?.privacyConsentGivenAt)
     void loadProfiles()
   }, [settings, loadProfiles])
+
+  useEffect(
+    () => window.api.events.onUpdateStatus((status) => setUpdateStatus(status)),
+    []
+  )
+
+  useEffect(() => {
+    void call(window.api.app.updateStatus())
+      .then(setUpdateStatus)
+      .catch(() => undefined)
+  }, [])
 
   if (!settings || !draft || !secrets) {
     return (
@@ -128,6 +162,25 @@ export function SettingsPage(): React.JSX.Element {
     } finally {
       setTesting(false)
       await refreshSecrets()
+    }
+  }
+
+  const checkForUpdates = async (): Promise<void> => {
+    setCheckingUpdate(true)
+    try {
+      await call(window.api.app.checkUpdate())
+    } catch (error) {
+      toast('error', error instanceof Error ? error.message : 'Vérification des mises à jour impossible.')
+    } finally {
+      setCheckingUpdate(false)
+    }
+  }
+
+  const installUpdate = async (): Promise<void> => {
+    try {
+      await call(window.api.app.installUpdate())
+    } catch (error) {
+      toast('error', error instanceof Error ? error.message : 'Installation impossible.')
     }
   }
 
@@ -404,6 +457,29 @@ export function SettingsPage(): React.JSX.Element {
           <p><strong className="text-ink">Node :</strong> {info?.node ?? '—'}</p>
           <p><strong className="text-ink">Dossier données :</strong> {info?.userDataPath ?? '—'}</p>
           <p><strong className="text-ink">Base :</strong> {info?.dbPath ?? '—'}</p>
+        </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Mises à jour" subtitle="Canal de mise à jour automatique de l’application." />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              icon={<RefreshCcw className="h-4 w-4" />}
+              disabled={checkingUpdate || updateStatus?.state === 'downloading'}
+              onClick={() => void checkForUpdates()}
+            >
+              {checkingUpdate ? 'Vérification…' : 'Vérifier les mises à jour'}
+            </Button>
+            {updateStatus?.state === 'downloaded' ? (
+              <Button icon={<Download className="h-4 w-4" />} onClick={() => void installUpdate()}>
+                Installer et redémarrer (v{updateStatus.version})
+              </Button>
+            ) : null}
+          </div>
+          <p className="text-xs text-ink-dim" data-testid="update-status">
+            {updateStatus ? updateStatusMessage(updateStatus) : 'Statut inconnu.'}
+          </p>
         </div>
       </Card>
 

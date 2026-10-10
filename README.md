@@ -37,6 +37,7 @@ npm run dev        # lance l'application en mode développement
 | `npm run make-icon` | Génère `build/icon.png` et `build/icon.ico` sans dépendance |
 | `npm run dist` | Build + installateur NSIS dans `release/` |
 | `npm run dist:dir` | Build + exécutable non installé dans `release/win-unpacked` |
+| `npm run dist:publish` | Build + installateur puis publication (nécessite un provider `publish`) |
 
 ## Structure
 
@@ -79,6 +80,25 @@ backups/ sauvegardes de la base
 - Génération d'images : `gemini-3.1-flash-image`
 
 (Modifiables dans Paramètres.)
+
+## Mises à jour automatiques
+
+La vérification des mises à jour est intégrée (Paramètres → Mises à jour) via `electron-updater`, mais **désactivée tant qu'aucun dépôt n'est configuré** :
+
+- En production, electron-builder génère `Resources/app-update.yml` dès qu'une section `publish` est présente dans `electron-builder.yml` (ex. GitHub Releases ou une URL générique).
+- En test, la variable `DESIGN_FELICITE_UPDATE_URL` active un dépôt *generic*.
+- Le canal reste inactif en développement (application non empaquetée) et sans le moindre effet de bord.
+
+Un workflow GitHub Actions (`release.yml`) prépare la publication à chaque tag `v*`.
+
+## Signature de code (Windows)
+
+L'installateur n'est **pas signé** par défaut : Windows SmartScreen peut afficher un avertissement. Pour signer :
+
+- **Certificat signé (OV/EV)** : définir les variables d'environnement `CSC_LINK` (`.pfx`/`.p12`) et `CSC_KEY_PASSWORD` avant `npm run dist`.
+- **Azure Trusted Signing** : configurer `azureSignOptions` dans `electron-builder.yml`.
+
+La signature protège aussi l'intégrité des mises à jour (vérification automatique côté `electron-updater`).
 
 ## Licence
 
