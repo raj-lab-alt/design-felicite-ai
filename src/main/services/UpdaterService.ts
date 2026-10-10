@@ -29,7 +29,7 @@ export class UpdaterService {
       return
     }
 
-    autoUpdater.autoDownload = false
+    autoUpdater.autoDownload = true
     autoUpdater.autoInstallOnAppQuit = true
     autoUpdater.logger = {
       info: (message?: unknown) => logger.info(message == null ? '' : String(message)),
