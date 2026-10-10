@@ -111,11 +111,15 @@ test.describe('Application de bureau (smoke)', () => {
 
       await expect(window.getByRole('dialog')).toContainText('Nouvelle analyse')
 
+      // Sans clé API ni consentement, l'analyse est bloquée avec un motif explicite.
+      await expect(window.getByRole('dialog')).toContainText('Le consentement de confidentialité n’est pas accepté.')
+
       const innerHeight = await window.evaluate(
         () => (globalThis as unknown as { innerHeight: number }).innerHeight
       )
       const button = window.getByRole('button', { name: 'Lancer l’analyse' })
       await expect(button).toBeVisible()
+      await expect(button).toBeDisabled()
       const box = await button.boundingBox()
       expect(box).not.toBeNull()
       expect(box!.y + box!.height).toBeLessThanOrEqual(innerHeight)

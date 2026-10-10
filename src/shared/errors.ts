@@ -21,6 +21,7 @@ export type AppErrorCode =
   | 'ERR_RESPONSE_EMPTY'
   | 'ERR_RESPONSE_INVALID'
   | 'ERR_VALIDATION'
+  | 'ERR_CONSENT_REQUIRED'
   | 'ERR_STORAGE'
   | 'ERR_DB_LOCKED'
   | 'ERR_DB_CORRUPT'
@@ -49,6 +50,8 @@ const USER_MESSAGES: Record<AppErrorCode, string> = {
   ERR_RESPONSE_EMPTY: 'Le service a renvoyé une réponse vide.',
   ERR_RESPONSE_INVALID: 'La réponse structurée du modèle est invalide ou incomplète.',
   ERR_VALIDATION: 'Certaines données sont invalides.',
+  ERR_CONSENT_REQUIRED:
+    'Le consentement de confidentialité doit être accepté dans Paramètres → Confidentialité & consentement avant de lancer une analyse.',
   ERR_STORAGE: "Échec de l'accès au stockage local.",
   ERR_DB_LOCKED: 'La base de données locale est verrouillée. Fermez les autres instances puis réessayez.',
   ERR_DB_CORRUPT: 'La base de données locale semble endommagée. Une restauration peut être nécessaire.',

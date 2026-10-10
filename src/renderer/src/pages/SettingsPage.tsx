@@ -313,12 +313,16 @@ export function SettingsPage(): React.JSX.Element {
     }
   }
 
-  const saveConsent = async (): Promise<void> => {
+  const setConsentAndSave = async (checked: boolean): Promise<void> => {
+    const previous = consent
+    setConsent(checked)
     try {
-      await updateSettings({ privacyConsentGivenAt: consent ? settings.privacyConsentGivenAt ?? new Date().toISOString() : null })
-      toast('success', consent ? 'Consentement enregistré.' : 'Consentement retiré : aucune analyse ne sera possible.')
-      setConsent(consent)
+      await updateSettings({
+        privacyConsentGivenAt: checked ? settings?.privacyConsentGivenAt ?? new Date().toISOString() : null
+      })
+      toast('success', checked ? 'Consentement enregistré.' : 'Consentement retiré : aucune analyse ne sera possible.')
     } catch (error) {
+      setConsent(previous)
       toast('error', error instanceof Error ? error.message : 'Enregistrement impossible.')
     }
   }
@@ -473,17 +477,18 @@ export function SettingsPage(): React.JSX.Element {
         />
         <div className="space-y-3">
           <label className="flex items-start gap-3 rounded-lg border border-line bg-panel-2 p-3">
-            <Switch checked={consent} onCheckedChange={(checked) => setConsent(checked)} label="Consentement" />
+            <Switch checked={consent} onCheckedChange={(checked) => void setConsentAndSave(checked)} label="Consentement" />
             <span className="text-xs text-ink-dim">
               J’accepte que mon image de design soit envoyée vers l’API Gemini (modèle d’analyse visuel) lorsque je lance une
               analyse ou un redesign, afin de produire un diagnostic visuel. Je comprends qu’aucun résultat n’est une promesse de
               vente ni une mesure psychologique, et que je reste maître des données (suppression locale possible à tout moment).
             </span>
           </label>
-          <Button size="sm" variant="outline" onClick={() => void saveConsent()}>
-            {consent ? 'Consentement accepté' : 'Accepter le consentement'}
-          </Button>
-          {!consent ? <p className="text-xs text-warn">Sans consentement, les boutons d’analyse sont désactivés.</p> : null}
+          {consent ? (
+            <p className="text-xs text-ink-dim">Consentement enregistré : les analyses sont autorisées.</p>
+          ) : (
+            <p className="text-xs text-warn">Sans consentement, les analyses sont bloquées.</p>
+          )}
         </div>
       </Card>
 

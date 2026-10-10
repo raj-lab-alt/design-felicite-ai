@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { RefreshCcw } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, RefreshCcw } from 'lucide-react'
 import { Button, Dialog, Field, Input, ProgressBar, Select, Textarea } from './ui'
 import { call } from '../lib/api'
 import { useAppStore } from '../store/useAppStore'
@@ -46,17 +47,23 @@ export function AnalysisWizard({
   onRun: (analysisId: string) => void
 }): React.JSX.Element {
   const toast = useAppStore((s) => s.toast)
+  const navigate = useNavigate()
   const [context, setContext] = useState<AnalysisContext>(emptyContext())
   const [profiles, setProfiles] = useState<BrandProfile[]>([])
   const [brandProfileId, setBrandProfileId] = useState<string>('')
   const [running, setRunning] = useState(false)
   const [progress, setProgress] = useState<AnalysisProgressEvent | null>(null)
+  const [prereq, setPrereq] = useState<{ apiKey: boolean; consent: boolean } | null>(null)
 
   useEffect(() => {
     if (!open) return
     setRunning(false)
     setProgress(null)
     setContext(emptyContext())
+    setPrereq(null)
+    void Promise.all([call(window.api.settings.get()), call(window.api.secrets.status())])
+      .then(([settings, secrets]) => setPrereq({ apiKey: secrets.configured, consent: Boolean(settings.privacyConsentGivenAt) }))
+      .catch(() => setPrereq({ apiKey: false, consent: false }))
     void call(window.api.profiles.list())
       .then((list) => setProfiles(list))
       .catch(() => setProfiles([]))
@@ -124,7 +131,11 @@ export function AnalysisWizard({
               <Button key="close" variant="outline" onClick={onClose}>
                 Fermer
               </Button>,
-              <Button key="start" onClick={() => void start()}>
+              <Button
+                key="start"
+                onClick={() => void start()}
+                disabled={!prereq || !prereq.apiKey || !prereq.consent}
+              >
                 Lancer l’analyse
               </Button>
             ]
@@ -144,6 +155,27 @@ export function AnalysisWizard({
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {prereq && (!prereq.apiKey || !prereq.consent) ? (
+            <div className="flex items-start gap-2 rounded-lg border border-warn/40 bg-warn/5 p-3 text-xs text-ink sm:col-span-2">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warn" />
+              <div className="space-y-1">
+                {!prereq.apiKey ? <p>Aucune clé API Gemini n’est configurée.</p> : null}
+                {!prereq.consent ? <p>Le consentement de confidentialité n’est pas accepté.</p> : null}
+                <p className="text-ink-dim">Terminez la configuration avant de lancer une analyse.</p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-1"
+                  onClick={() => {
+                    onClose()
+                    navigate('/settings')
+                  }}
+                >
+                  Ouvrir les paramètres
+                </Button>
+              </div>
+            </div>
+          ) : null}
           <Field label="Nom du produit" hint="optionnel">
             <Input value={context.productName ?? ''} onChange={(e) => set('productName', e.target.value)} />
           </Field>

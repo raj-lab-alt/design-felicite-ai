@@ -108,7 +108,7 @@ export class DesignAnalysisService {
     if (!this.gemini.isConfigured()) throw new AppError('ERR_API_NOT_CONFIGURED')
     if (!settings.privacyConsentGivenAt) {
       throw new AppError(
-        'ERR_VALIDATION',
+        'ERR_CONSENT_REQUIRED',
         'Le consentement de confidentialité doit être accepté avant tout envoi d’image au service Gemini.'
       )
     }
