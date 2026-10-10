@@ -3,6 +3,7 @@ import { ImageDown, Lightbulb, RefreshCcw, Sparkles } from 'lucide-react'
 import { Badge, Button, Card, Field, ProgressBar, Select, Spinner, Textarea } from './ui'
 import { call, mediaUrl } from '../lib/api'
 import { useAppStore } from '../store/useAppStore'
+import { userMessageForCode } from '@shared/errors'
 import type { VariantDTO, RedesignPromptDTO } from '@shared/ipc'
 import type { RedesignMode } from '@shared/schemas'
 
@@ -194,7 +195,9 @@ export function RedesignStudio({
           ) : (
             <div className="rounded-lg bg-panel-2 p-4 text-xs text-ink-dim">
               {last.status === 'failed'
-                ? 'La génération n’a pas abouti (prompt conservé). Vous pouvez retenter en activant la génération d’images.'
+                ? `La génération n’a pas abouti (prompt conservé). ${
+                    last.errorCode ? userMessageForCode(last.errorCode) : ''
+                  }`.trim()
                 : 'Aucune image disponible pour le moment.'}
             </div>
           )}

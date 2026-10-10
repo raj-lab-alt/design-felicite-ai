@@ -1,5 +1,7 @@
+import { Modality } from '@google/genai'
 import { AppError } from '@shared/errors'
 import { mapGeminiError } from './errors'
+import { logger } from '../utils/logger'
 import { buildContents } from './GeminiVisionProvider'
 import type {
   GeminiClientFactory,
@@ -22,8 +24,8 @@ export class GeminiImageGenerationProvider implements ImageGenerationProvider {
         model: request.model,
         contents: buildContents(prompt, request.referenceImages),
         config: {
-          // 'X_MEDIA' force une sortie image pour les modèles d'image dédiés (Nano Banana).
-          responseModalities: ['X_MEDIA'] as unknown as import('@google/genai').Modality[],
+          // Sortie image uniquement pour les modèles d'image dédiés (Nano Banana).
+          responseModalities: [Modality.IMAGE],
           abortSignal: request.signal
         }
       })
@@ -47,6 +49,9 @@ export class GeminiImageGenerationProvider implements ImageGenerationProvider {
         modelVersion: response.modelVersion ?? null
       }
     } catch (error) {
+      logger.warn('Erreur du service Gemini (image)', {
+        message: error instanceof Error ? error.message : String(error)
+      })
       throw mapGeminiError(error)
     }
   }
